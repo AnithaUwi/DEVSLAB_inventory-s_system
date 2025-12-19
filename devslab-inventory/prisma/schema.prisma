@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   
+  role      UserRole
+  branchId  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  
+  // Relationships
+  stockMovements StockMovement[]
+
+  @@index([branchId])
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  code      String   @unique
+  location  String
+  type      String   @default("BRANCH")
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  
+  // Relationships
+  users          User[]
+  stockBalances  StockBalance[]
+  movements      StockMovement[] @relation("BranchMovements")
+  fromTransfers  StockMovement[] @relation("FromTransfers")
+  toTransfers    StockMovement[] @relation("ToTransfers")
+  buses          Bus[]
+
+  @@index([type])
+}
+
+
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  // REMOVE: items Item[]
+}
+model Item {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  name            String
+  description     String?
+  category        String   // String, not relation
+  unitOfMeasure   String   @default("pcs")
+  reorderLevel    Int      @default(10)
+  currentPrice    Float    @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  stockBalances   StockBalance[]
+  stockMovements  StockMovement[]
+  
+  @@index([code])
+  @@index([category])
+}
+
+model StockBalance {
+  id        String   @id @default(cuid())
+  itemId    String
+  branchId  String
+  quantity  Int      @default(0)
+  item      Item     @relation(fields: [itemId], references: [id])
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  updatedAt DateTime @updatedAt
+  
+  @@unique([itemId, branchId])  // One balance per item per branch
+  @@index([itemId])
+  @@index([branchId])
+}
+
+model Bus {
+  id          String   @id @default(cuid())
+  plateNumber String   @unique  // e.g., "RAA 123A"
+  fleetNumber String?  // Internal fleet number
+  branchId    String
+  make        String?  // e.g., "Toyota", "Mercedes"
+  model       String?  // e.g., "Coaster", "Sprinter"
+  year        Int?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  branch         Branch         @relation(fields: [branchId], references: [id])
+  stockMovements StockMovement[]
+  
+  @@index([branchId])
+  @@index([plateNumber])
+}
+
+model StockMovement {
+  id           String        @id @default(cuid())
+  type         MovementType  // RECEIVE, TRANSFER, ISSUE, RETURN, ADJUST, DISPOSE
+  itemId       String
+  branchId     String  // Which branch this movement affects
+  fromBranchId String? // For transfers: source branch
+  toBranchId   String? // For transfers: destination branch
+  busId        String? // For ISSUE: which bus received the parts
+  quantity     Int
+  reference    String?  // Receipt number, transfer number, etc.
+  notes        String?
+  userId       String
+  createdAt    DateTime      @default(now())
+  
+  // Relationships
+  item        Item     @relation(fields: [itemId], references: [id])
+  branch      Branch   @relation("BranchMovements", fields: [branchId], references: [id])
+  fromBranch  Branch?  @relation("FromTransfers", fields: [fromBranchId], references: [id])
+  toBranch    Branch?  @relation("ToTransfers", fields: [toBranchId], references: [id])
+  bus         Bus?     @relation(fields: [busId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@index([itemId])
+  @@index([branchId])
+  @@index([userId])
+  @@index([busId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+enum UserRole {
+  ADMIN
+  HQ_MANAGER
+  BRANCH_MANAGER
+  STOREKEEPER
+  MECHANIC
+  AUDITOR
+}
+
+enum MovementType {
+  RECEIVE   // Receive from supplier
+  TRANSFER  // Transfer between branches
+  ISSUE     // Issue to bus/mechanic
+  RETURN    // Return to store
+  ADJUST    // Adjust after count
+  DISPOSE   // Dispose/damaged
+}
