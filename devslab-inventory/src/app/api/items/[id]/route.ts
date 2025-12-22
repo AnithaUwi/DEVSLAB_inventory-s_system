@@ -11,10 +11,10 @@ export async function GET(
   try {
     // FIX: Await the params
     const { id } = await params
-    console.log('✅ API GET - Item ID:', id)
+    console.log(' API GET - Item ID:', id)
     
     if (!id) {
-      console.log('❌ API - No ID provided')
+      console.log('API - No ID provided')
       return NextResponse.json({ error: 'ID required' }, { status: 400 })
     }
     
@@ -55,11 +55,11 @@ export async function GET(
       }))
     }
     
-    console.log('✅ API - Item found:', item.name, 'Total stock:', totalQuantity)
+    console.log('API - Item found:', item.name, 'Total stock:', totalQuantity)
     return NextResponse.json(itemWithStock)
     
   } catch (error: any) {
-    console.error('❌ API Error:', error)
+    console.error(' API Error:', error)
     return NextResponse.json(
       { error: 'Failed: ' + error.message },
       { status: 500 }

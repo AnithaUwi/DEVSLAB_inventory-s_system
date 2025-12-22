@@ -21,7 +21,7 @@ export default function ViewItemPage() {
     if (itemId) {
       fetchItem()
     } else {
-      console.log('❌ View Page - No item ID found')
+      console.log(' View Page - No item ID found')
       setError('Item ID is missing')
       setLoading(false)
     }

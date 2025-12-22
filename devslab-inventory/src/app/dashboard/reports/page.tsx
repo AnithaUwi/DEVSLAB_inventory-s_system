@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/Auth'
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { MovementType, UserRole } from '@prisma/client'
+import { PDFExportButton } from '@/components/reports/PDFExportButton'
 
 const BRANCH_SCOPED_ROLES: UserRole[] = ['BRANCH_MANAGER', 'STOREKEEPER', 'MECHANIC']
 
@@ -51,11 +52,22 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-        <p className="text-gray-600">
-          {branchIdFilter ? 'Branch report' : 'Organization-wide report'} with live numbers.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <p className="text-gray-600">
+            {branchIdFilter ? 'Branch report' : 'Organization-wide report'} with live numbers.
+          </p>
+        </div>
+        
+        {/* PDF Export Button - Client Component */}
+        <PDFExportButton
+          balances={balances}
+          movementMap={movementMap}
+          stockValue={stockValue}
+          branchIdFilter={branchIdFilter}
+          session={session}
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,4 +151,3 @@ export default async function ReportsPage() {
     </div>
   )
 }
-
